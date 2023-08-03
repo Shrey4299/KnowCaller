@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-
-import { Link, useNavigate } from "react-router-dom"; // Import the useNavigate hook
+import { useNavigate } from "react-router-dom";
 import {
   Card,
   CardHeader,
@@ -14,16 +13,14 @@ import Cookies from "js-cookie";
 
 export function WhoViewed() {
   const [whoViewedListItems, setWhoViewedListItems] = useState([]);
-  const navigate = useNavigate(); // Add this line to initialize the useNavigate hook
+  const navigate = useNavigate();
 
-  const isPremium = Cookies.get("premium");
+  const [isPremium, setIsPremium] = useState(false); // Initialize isPremium as false
 
   useEffect(() => {
     const id = Cookies.get("id");
-    console.log(id);
 
     if (!id) {
-      // Redirect to login if user ID is not present
       navigate("/sign-in");
     } else {
       const url = `http://127.0.0.1:8000/registeruser/who-viewed-list/${id}/`;
@@ -37,14 +34,23 @@ export function WhoViewed() {
         .catch((error) => {
           console.error("Error fetching data:", error);
         });
+
+      // Fetch the premium data
+      axios
+        .get(`http://127.0.0.1:8000/registeruser/create/${id}/?format=json`)
+        .then((response) => {
+          const { premium } = response.data;
+          setIsPremium(premium); // Update isPremium based on the response
+          console.log("user is oremium" + isPremium)
+        })
+        .catch((error) => {
+          console.error("Error fetching premium data:", error);
+        });
     }
   }, [navigate]);
 
   const handleSignInNavigation = () => {
     const userId = Cookies.get("id");
-
-    // If "id" is present, navigate to "/pricing"
-    // Otherwise, navigate to "/sign-in"
     const route = userId ? "/pricing" : "/sign-in";
     navigate(route);
   };
@@ -69,10 +75,10 @@ export function WhoViewed() {
           </CardHeader>
 
           {/* Apply styles based on isPremium */}
-          <div className={isPremium === "true" ? "py-2" : "blur-[3px]"}>
+          <div className={isPremium ? "py-2" : "blur-[3px]"}>
             <CardBody>
               {whoViewedListItems.length === 0 ? (
-                <Typography variant="" className="text-center text-gray-700">
+                <Typography variant="h6" className="text-center text-gray-700">
                   No one Viewed you.
                 </Typography>
               ) : (
@@ -94,20 +100,19 @@ export function WhoViewed() {
 
             {/* Render the premium button only when isPremium is false */}
           </div>
-            {!isPremium && (
-              <div className="relative bottom-32 mt-4 flex items-center justify-center blur-[0px]">
-                <Button
-                  color="lightBlue"
-                  buttonType="filled"
-                  size="lg"
-                  ripple="dark"
-                  className="flex items-center blur-[0px]"
-                  onClick={handleSignInNavigation}
-                >
-                  <FiUnlock className="mr-2" /> Unlock
-                </Button>
-              </div>
-            )}
+          {!isPremium && (
+            <div className="relative bottom-32 mt-4 flex items-center justify-center blur-[0px]">
+              <Button
+                color="blue"
+                buttontype="filled"
+                size="lg"
+                className="flex items-center blur-[0px]"
+                onClick={handleSignInNavigation}
+              >
+                <FiUnlock className="mr-2" /> Unlock
+              </Button>
+            </div>
+          )}
         </Card>
       </div>
     </>

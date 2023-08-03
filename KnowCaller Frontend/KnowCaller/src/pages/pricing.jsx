@@ -1,11 +1,12 @@
-import Cookies from "js-cookie";
-import React from "react";
+import React, { useEffect } from "react";
 import { MdCheck } from "react-icons/md";
 import { Link } from "react-router-dom";
 
 const Pricing = () => {
 
-  const id = Cookies.get("id")
+
+
+
   return (
     <>
       <img
@@ -60,8 +61,7 @@ const Pricing = () => {
                 </li>
               </ul>
               <div className="text-center">
-
-                <Link to={ `${id ? "/payment" : "/sign-in"}`}>
+                <Link to={`${id ? "/payment" : "/sign-in"}`}>
                   <button className="rounded-md bg-green-500 px-4 py-2 text-white">
                     Get Premium
                   </button>

@@ -1,8 +1,10 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link , useNavigate } from "react-router-dom";
 import { AiFillCaretDown } from "react-icons/ai";
 import { SiAmazonpay, SiPhonepe, SiPaytm, SiMobx } from "react-icons/si";
 import Cookies from "js-cookie";
+import axios from "axios";
+
 
 const Payment = () => {
   const [paymentMethod, setPaymentMethod] = useState("Card");
@@ -12,9 +14,35 @@ const Payment = () => {
   const [upiId, setUpiId] = useState("");
   const [walletId, setWalletId] = useState("");
 
+  const navigate = useNavigate();
+
+
   const handlePaymentMethodChange = (method) => {
     setPaymentMethod(method);
   };
+
+const updatePremiumField = () => {
+  const userId = Cookies.get("id");
+
+  if (!userId) {
+    // If user ID is not present, handle the error or redirect to login
+    return Promise.reject(new Error("User ID not found."));
+  }
+
+  const url = `http://127.0.0.1:8000/registeruser/update-premium/${userId}/`;
+
+  return axios
+    .post(url)
+    .then((response) => {
+      // Premium field updated successfully
+      navigate("/home");
+      return response.data.message;
+    })
+    .catch((error) => {
+      // Handle errors or rethrow to be caught in the caller function
+      throw error;
+    });
+};
 
   return (
     <>
@@ -218,16 +246,12 @@ const Payment = () => {
 
               {/* Pay Now */}
               <div className="mt-8 text-center">
-                <Link to="/home">
                   <button
                     className="rounded-md bg-green-500 px-6 py-3 font-semibold text-white transition-all hover:bg-green-600"
-                    onClick={() => {
-                      Cookies.set("premium", "true", { expires: 365 }); // Set the cookie with name "premium" and value "true" that expires after 365 days
-                    }}
+                    onClick={updatePremiumField}
                   >
                     Pay Now
                   </button>
-                </Link>
               </div>
             </div>
           </div>

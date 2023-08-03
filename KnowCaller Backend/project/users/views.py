@@ -28,13 +28,25 @@ class CustomUserCreate(APIView):
 
 
 class GetUserById(APIView):
-    def get(self, request, user_id, format='json'):
+    def get(self, request, user_id):
         try:
             user = RegisterUser.objects.get(id=user_id)
             serializer = CustomUserSerializer(user)
+
             return Response(serializer.data, status=status.HTTP_200_OK)
         except RegisterUser.DoesNotExist:
             return Response({"detail": "User not found."}, status=status.HTTP_404_NOT_FOUND)
+
+    def post(self, request, user_id):
+        try:
+            user = RegisterUser.objects.get(phone_number=request.data.get("phone_number"))
+            user.name = request.data.get("name")
+            user.save()
+            return Response({"message": "name field updated successfully."}, status=status.HTTP_200_OK)
+        except RegisterUser.DoesNotExist:
+            return Response({"error": "User not found."}, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 class LoginView(APIView):
@@ -94,6 +106,18 @@ class LogoutView(APIView):
         }
         return response
 
+
+class PremiumUpdateAPIView(APIView):
+    def post(self, request, pk):
+        try:
+            user = RegisterUser.objects.get(pk=pk)
+            user.premium = True
+            user.save()
+            return Response({"message": "Premium field updated successfully."}, status=status.HTTP_200_OK)
+        except RegisterUser.DoesNotExist:
+            return Response({"error": "User not found."}, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 class UserSpamListView(APIView):
     def get(self, request, user_id):
@@ -210,13 +234,28 @@ class WhoViewedListView(APIView):
 class CommentListByPhoneNumber(APIView):
 
     def get(self, request):
-        phone_number = request.data.get('phone_number')
+        phone_number = request.query_params.get("phone_number")
 
-        # if not phone_number:
-        #     return Response({'detail': 'phone_number is required in the request body.'}, status=status.HTTP_400_BAD_REQUEST)
-
+        print(phone_number)
         user = get_object_or_404(RegisterUser, phone_number=phone_number)
-        comments = Comment.objects.filter(user=user)
 
-        serializer = CommentSerializer(comments, many=True)
+        comment_list = Comment.objects.filter(user=user)
+
+        serializer = CommentSerializer(comment_list, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def post(self, request, user_id):
+        phone_number = request.data.get("phone_number")
+        user = get_object_or_404(RegisterUser, phone_number=phone_number)
+        created_by = RegisterUser.objects.get(pk=user_id)
+        content = request.data.get("content")
+        comment = Comment.objects.create(user=user, content=content, created_by=created_by)
+
+        # Serialize the created comment and return the response
+        serializer = CommentSerializer(comment)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+
+
+
+

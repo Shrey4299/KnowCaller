@@ -14,11 +14,14 @@ import Cookies from "js-cookie";
 export function Search() {
   const [phoneNumber, setPhoneNumber] = useState("");
   const [name, setName] = useState("");
+  const [content, setContent] = useState("");
   const [spam, setSpam] = useState(false);
   const [showCard, setShowCard] = useState(false);
   const [comments, setComments] = useState([]);
   const [blocked, SetBlocked] = useState(false);
   const [spamed, SetSpamed] = useState(false);
+  const [suggestName, SetSuggestName] = useState(false);
+  const [newName, SetNewName] = useState("");
 
   const navigate = useNavigate();
 
@@ -36,6 +39,7 @@ export function Search() {
         setSpam(response.data[0]["spam"]);
         setShowCard(true);
         handleWhoViewed();
+        fetchComments();
       })
       .catch((error) => {
         console.error("Error:", error);
@@ -81,11 +85,9 @@ export function Search() {
 
       console.log("Number blocked:", response.data);
       SetBlocked(true);
-      
     } catch (error) {
       console.error("Error blocking number:", error);
       SetBlocked(true);
-
     }
   };
 
@@ -113,24 +115,102 @@ export function Search() {
     }
   };
 
-  const fetchComments = async (e) => {
-    // const userId = Cookies.get("id");
-    // if (!userId) {
-    //   navigate("/sign-in");
-    //   return;
-    // }
-    // const url = "http://127.0.0.1:8000/registeruser/comments/";
-    // try {
-    //   const response = await axios.get(url, {
-    //     phone_number: phoneNumber,
-    //   });
-    //   console.log("Spam created:", response.data);
-    // } catch (error) {
-    //   console.error("Error creating spam:", error);
-    // }
+  const fetchComments = () => {
+    const phone_number = phoneNumber;
+
+    axios
+      .get("http://127.0.0.1:8000/registeruser/comments/", {
+        params: {
+          phone_number: phone_number,
+        },
+        headers: {
+          "Content-Type": "application/json",
+        },
+      })
+      .then((response) => {
+        console.log("Response:", response.data);
+        // Update the comments state with the fetched data
+        setComments(response.data);
+      })
+      .catch((error) => {
+        console.error("Error fetching comments:", error);
+      });
   };
 
-  // useEffect to fetch comments when the component mounts or when the phoneNumber changes
+  const handlePostComment = () => {
+    const userId = Cookies.get("id");
+
+    if (!userId) {
+      navigate("/sign-in");
+      return;
+    }
+
+    const requestData = {
+      phone_number: phoneNumber,
+      content: content,
+    };
+
+    axios
+      .post(
+        `http://127.0.0.1:8000/registeruser/comments/${userId}/`,
+        requestData
+      )
+      .then((response) => {
+        console.log("New comment created:", response.data);
+        setContent("");
+        fetchComments();
+      })
+      .catch((error) => {
+        console.error("Error creating comment:", error);
+      });
+  };
+
+  const handleSuggestName = () => {
+    const userId = Cookies.get("id");
+
+    if (!userId) {
+      navigate("/sign-in");
+      return;
+    }
+
+    const requestData = {
+      phone_number: phoneNumber,
+      name: newName,
+    };
+
+    axios
+      .post(`http://127.0.0.1:8000/registeruser/create/${userId}/`, requestData)
+      .then((response) => {
+        console.log(response.data);
+        SetSuggestName(false);
+        handleSearch();
+      })
+      .catch((error) => {
+        console.error("Error creating comment:", error);
+      });
+  };
+
+  const calculateDaysPassed = (createdAt) => {
+    const now = new Date();
+    const createdDate = new Date(createdAt);
+    const timeDifferenceInMs = now - createdDate;
+    const daysPassed = Math.floor(timeDifferenceInMs / (1000 * 60 * 60 * 24));
+    return daysPassed;
+  };
+
+  const getNameOfUser = async (createdBy) => {
+    const baseURL = "http://127.0.0.1:8000";
+    const url = `${baseURL}/registeruser/create/${createdBy}/?format=json`;
+
+    try {
+      const response = await axios.get(url);
+      const userName = response.data.name;
+      return userName;
+    } catch (error) {
+      console.error("Error fetching user data:", error);
+      return ""; // Return a default value or handle the error case appropriately
+    }
+  };
 
   return (
     <>
@@ -183,7 +263,10 @@ export function Search() {
               </div>
             </div>
             <div className="flex h-10 justify-evenly bg-white py-10 text-sm text-gray-600">
-              <button className="h-10 rounded border-[1px] border-gray-700 px-2 font-bold text-gray-700 transition-transform duration-200 hover:scale-105">
+              <button
+                onClick={() => SetSuggestName(!suggestName)}
+                className="h-10 rounded border-[1px] border-gray-700 px-2 font-bold text-gray-700 transition-transform duration-200 hover:scale-105"
+              >
                 <FaSave className="inline-block" /> Suggest name
               </button>
               <button className="h-10 rounded border-[1px] border-gray-700  px-2 font-bold text-gray-700 transition-transform duration-200 hover:scale-105">
@@ -192,31 +275,50 @@ export function Search() {
 
               <button
                 onClick={handleSpamCreator}
-                className={`h-10 rounded border-[1px] border-gray-700  px-2 font-bold ${spamed ? "text-white bg-red-500" :"text-red-400"} transition-transform duration-200 hover:scale-105`}
+                className={`h-10 rounded border-[1px] border-gray-700  px-2 font-bold ${
+                  spamed ? "bg-red-500 text-white" : "text-red-400"
+                } transition-transform duration-200 hover:scale-105`}
               >
                 <FaExclamationCircle className="inline-block" />
                 {spamed ? "Spamed" : "Mark as spam"}
               </button>
               <button
                 onClick={handleBlock}
-                className={`h-10 rounded border-[1px] border-gray-700  px-2 font-bold ${blocked ? "text-white bg-red-500" : "text-red-400"} transition-transform duration-200 hover:scale-105`}
+                className={`h-10 rounded border-[1px] border-gray-700  px-2 font-bold ${
+                  blocked ? "bg-red-500 text-white" : "text-red-400"
+                } transition-transform duration-200 hover:scale-105`}
               >
                 <FaExclamationCircle className="inline-block" />{" "}
                 {blocked ? "Blocked" : "Block nUmber"}
               </button>
             </div>
-            Comment Section
+            {/* suggest name section */}
+            <div
+              className={`my-4 flex items-center gap-4 px-8 ${
+                suggestName ? " " : "hidden"
+              } `}
+            >
+              <input
+                type="text"
+                placeholder="Suggest a name..."
+                value={newName}
+                onChange={(e) => SetNewName(e.target.value)}
+                className="flex-grow rounded-lg border px-4 py-2 text-black focus:border-blue-500 focus:outline-none focus:ring"
+              />
+              <button
+                onClick={handleSuggestName}
+                className="rounded-lg bg-blue-500 px-4 py-2 font-bold text-white hover:bg-blue-600"
+              >
+                Submit
+              </button>
+            </div>
+            {/* suggest name section */}
+            {/* Comment Section */}
             <div
               className={`mx-auto h-max w-[500px] ${
                 spam ? "" : "hidden"
               } rounded-xl bg-white p-8`}
             >
-              <button
-                onClick={fetchComments}
-                className="rounded-lg bg-blue-500 px-4 py-2 font-bold text-white hover:bg-blue-600"
-              >
-                Comments
-              </button>
               {/* Total Number of Comments */}
               <div className="mb-4 text-xl font-bold text-black">
                 Total Comments: {comments.length}
@@ -225,35 +327,48 @@ export function Search() {
                 <input
                   type="text"
                   placeholder="Add a comment..."
+                  value={content}
+                  onChange={(e) => setContent(e.target.value)}
                   className="flex-grow rounded-lg border px-4 py-2 text-black focus:border-blue-500 focus:outline-none focus:ring"
                 />
-                <button className="rounded-lg bg-blue-500 px-4 py-2 font-bold text-white hover:bg-blue-600">
+                <button
+                  onClick={handlePostComment}
+                  className="rounded-lg bg-blue-500 px-4 py-2 font-bold text-white hover:bg-blue-600"
+                >
                   Post
                 </button>
               </div>
 
               {/* Render all comments */}
-              {comments.map((comment) => (
-                <div key={comment.id} className="mt-4 flex items-center gap-3">
-                  <div className="flex h-14 w-14 items-center justify-center rounded-full bg-blue-500 font-bold text-white">
-                    {comment.name.charAt(0).toUpperCase()}
-                  </div>
-                  <div>
-                    <h1 className="text-sm text-gray-700">
-                      {comment.name} ⸱ {comment.date}
-                    </h1>
-                    {/* Comment */}
-                    <p className="text-black">{comment.content}</p>
+              {comments.reverse().map((comment) => (
+                <div
+                  key={comment.id}
+                  className="mt-4 flex items-center justify-between gap-3"
+                >
+                  <div className="flex items-center gap-5 ">
+                    <div className="flex h-14 w-14 items-center justify-center rounded-full bg-blue-500 font-bold text-white">
+                      {/* {comment.created_by?.charAt(0).toUpperCase() || "N"} */}
+                      N
+                    </div>
+                    <div>
+                      {/* <h1 className="text-sm text-gray-700">
+                        {calculateDaysPassed(comment.created_at)} days ago⸱
+                        {getNameOfUser(comment.created_by)}
+                      </h1> */}
+                      <h1 className="text-sm text-gray-700">
+                        {getNameOfUser(comment.created_by)}
+                      </h1>
+                      {/* Comment */}
+                      <p className="text-black">{comment.content}</p>
+                    </div>
                   </div>
 
                   {/* Likes and Dislikes */}
-                  <div className="mt-4 flex justify-evenly gap-2">
+                  <div className=" flex justify-evenly gap-4">
                     <div className="flex items-center gap-2 text-gray-600">
-                      <span>4</span>
                       <FaThumbsUp className="text-gray-700" />
                     </div>
                     <div className="flex items-center gap-2 text-gray-600">
-                      <span>1</span>
                       <FaThumbsDown className="text-gray-700" />
                     </div>
                   </div>

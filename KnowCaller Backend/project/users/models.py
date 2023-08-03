@@ -89,4 +89,4 @@ class Comment(models.Model):
     )
 
     def __str__(self):
-        return f"{self.user.name} - {self.created_at}"
+        return f"{self.user.name} - {self.created_by}"

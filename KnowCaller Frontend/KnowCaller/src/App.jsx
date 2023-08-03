@@ -8,6 +8,7 @@ import WhoViewed from "./pages/who-viewed";
 import Pricing from "./pages/pricing";
 import Payment from "./pages/payment";
 import LogOut from "./pages/logout";
+import Sample from "./pages/sample";
 
 function App() {
 
@@ -29,6 +30,7 @@ function App() {
         <Route path="/pricing" element={<Pricing />} />
         <Route path="/payment" element={<Payment />} />
         <Route path="/logout" element={<LogOut />} />
+        <Route path="/sample" element={<Sample />} />
         <Route path="*" element={<Navigate to="/home" replace />} />
       </Routes>
     </>
