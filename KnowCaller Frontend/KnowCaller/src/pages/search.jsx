@@ -22,6 +22,12 @@ export function Search() {
   const [spamed, SetSpamed] = useState(false);
   const [suggestName, SetSuggestName] = useState(false);
   const [newName, SetNewName] = useState("");
+  const [userNames, setUserNames] = useState({});
+
+
+    useEffect(() => {
+      fetchUserNames();
+    }, []);
 
   const navigate = useNavigate();
 
@@ -198,19 +204,25 @@ export function Search() {
     return daysPassed;
   };
 
-  const getNameOfUser = async (createdBy) => {
-    const baseURL = "http://127.0.0.1:8000";
-    const url = `${baseURL}/registeruser/create/${createdBy}/?format=json`;
-
-    try {
-      const response = await axios.get(url);
-      const userName = response.data.name;
-      return userName;
-    } catch (error) {
-      console.error("Error fetching user data:", error);
-      return ""; // Return a default value or handle the error case appropriately
-    }
+  const fetchUserNames = () => {
+    axios
+      .get("http://127.0.0.1:8000/users/") // Adjust the endpoint URL based on your API
+      .then((response) => {
+        // Create an object with user IDs as keys and user names as values
+        const namesObj = {};
+        response.data.forEach((user) => {
+          namesObj[user.id] = user.name;
+        });
+        setUserNames(namesObj);
+      })
+      .catch((error) => {
+        console.error("Error fetching user names:", error);
+      });
   };
+
+  useEffect(() => {
+    fetchUserNames();
+  }, []);
 
   return (
     <>
@@ -347,16 +359,15 @@ export function Search() {
                 >
                   <div className="flex items-center gap-5 ">
                     <div className="flex h-14 w-14 items-center justify-center rounded-full bg-blue-500 font-bold text-white">
-                      {/* {comment.created_by?.charAt(0).toUpperCase() || "N"} */}
-                      N
+                      {/* Access the user name directly from the state */}
+                      {userNames[comment.created_by]?.charAt(0).toUpperCase() ||
+                        "S"}
                     </div>
                     <div>
-                      {/* <h1 className="text-sm text-gray-700">
-                        {calculateDaysPassed(comment.created_at)} days ago⸱
-                        {getNameOfUser(comment.created_by)}
-                      </h1> */}
                       <h1 className="text-sm text-gray-700">
-                        {getNameOfUser(comment.created_by)}
+                        {calculateDaysPassed(comment.created_at)} days ago⸱{" "}
+                        {/* Access the user name directly from the state */}
+                        {userNames[comment.created_by] || "Shrey"}
                       </h1>
                       {/* Comment */}
                       <p className="text-black">{comment.content}</p>

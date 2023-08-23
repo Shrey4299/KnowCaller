@@ -1,11 +1,10 @@
+import Cookies from "js-cookie";
 import React, { useEffect } from "react";
 import { MdCheck } from "react-icons/md";
 import { Link } from "react-router-dom";
 
 const Pricing = () => {
-
-
-
+  const id = Cookies.get("id");
 
   return (
     <>
