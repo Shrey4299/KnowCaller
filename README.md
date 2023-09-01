@@ -5,4 +5,8 @@
 
 🎨 And that's not all! I didn't compromise on the user experience - the app boasts a user-friendly and visually appealing frontend developed with React, Next.js, Redux, Material UI, and Tailwind CSS. Seamless and delightful interactions await! 😍✨
 
-🔗 If you are looking for a Full Stack software developer, feel free to reach out! Let's connect and discuss. And if you want this project's source code, please leave your email in the comment below. 🤝
+
+
+
+https://github.com/Shrey4299/KnowCaller/assets/89632212/0491c2b6-e60b-47f8-93e5-50a0e6fa1dca
+
